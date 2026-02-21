@@ -1,0 +1,648 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Neon Cyberpunk Survivor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+
+      :root{
+        --primary: #ffffff;
+        --primaryGlowStrong: rgba(255,255,255,0.65);
+        --primaryGlowSoft: rgba(255,255,255,0.28);
+      }
+
+      
+      body, html {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        position: relative;
+        /* App-like deep navy + vibrant orbs (inspired by the reference UI) */
+        background-color: #07081a;
+        background-image:
+          radial-gradient(circle at 12% 20%, rgba(255, 168, 0, 0.55) 0%, transparent 42%),
+          radial-gradient(circle at 78% 18%, rgba(255, 54, 145, 0.50) 0%, transparent 44%),
+          radial-gradient(circle at 24% 82%, rgba(0, 214, 255, 0.30) 0%, transparent 48%),
+          radial-gradient(circle at 86% 78%, rgba(255, 168, 0, 0.22) 0%, transparent 52%),
+          radial-gradient(circle at 50% 52%, rgba(120, 80, 255, 0.10) 0%, transparent 55%),
+          #07081a;
+        font-family: 'Inter', sans-serif;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      /* Extra soft "orb" layers (cheap + GPU-friendly). */
+      @keyframes orbDrift {
+        0% { transform: translate3d(0, 0, 0) scale(1); }
+        50% { transform: translate3d(10px, -8px, 0) scale(1.02); }
+        100% { transform: translate3d(0, 0, 0) scale(1); }
+      }
+      body::before,
+      body::after {
+        content: '';
+        position: fixed;
+        inset: -12vh -12vw;
+        pointer-events: none;
+        z-index: -1;
+        opacity: 0.65;
+        mix-blend-mode: screen;
+        transform: translateZ(0);
+      }
+      body::before {
+        background:
+          radial-gradient(circle at 18% 34%, rgba(255, 168, 0, 0.55) 0%, rgba(255, 168, 0, 0) 46%),
+          radial-gradient(circle at 62% 10%, rgba(255, 54, 145, 0.55) 0%, rgba(255, 54, 145, 0) 52%),
+          radial-gradient(circle at 84% 64%, rgba(255, 168, 0, 0.38) 0%, rgba(255, 168, 0, 0) 56%);
+        animation: orbDrift 14s ease-in-out infinite;
+      }
+      body::after {
+        background:
+          radial-gradient(circle at 30% 78%, rgba(0, 214, 255, 0.38) 0%, rgba(0, 214, 255, 0) 54%),
+          radial-gradient(circle at 72% 72%, rgba(120, 80, 255, 0.28) 0%, rgba(120, 80, 255, 0) 58%);
+        opacity: 0.55;
+        animation: orbDrift 18s ease-in-out infinite reverse;
+      }
+      canvas {
+        display: block;
+        touch-action: none;
+      }
+      
+      .neon-text {
+        text-shadow: 0 0 10px var(--primaryGlowStrong), 0 0 20px var(--primaryGlowSoft);
+      }
+
+      /* Glassmorphism Core */
+      .premium-card {
+        position: relative;
+        background:
+          linear-gradient(145deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04));
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 34px;
+        box-shadow:
+          0 26px 60px rgba(0, 0, 0, 0.55),
+          inset 0 1px 0 rgba(255,255,255,0.18);
+      }
+      .premium-card::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background:
+          radial-gradient(circle at 18% 12%, rgba(255,255,255,0.22), rgba(255,255,255,0) 48%),
+          radial-gradient(circle at 86% 84%, rgba(255,255,255,0.10), rgba(255,255,255,0) 52%);
+        pointer-events: none;
+        opacity: 0.85;
+      }
+
+      .glass-button {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .glass-button:hover {
+        background: rgba(255,255,255,0.10);
+        border-color: rgba(255,255,255,0.35);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px -5px rgba(255,255,255,0.14);
+      }
+
+      .glass-button:active {
+        transform: translateY(0);
+      }
+
+      .glass-input {
+        background: rgba(0, 0, 0, 0.18);
+        border: 1px solid rgba(255, 255, 255, 0.10);
+      }
+
+      /* Primary CTA ("Let's go" vibe from the reference) */
+      .cta-gradient {
+        background: linear-gradient(90deg, rgba(255, 168, 0, 0.95), rgba(255, 54, 145, 0.92));
+        color: #fff;
+        border: 0 !important;
+        box-shadow:
+          0 18px 40px rgba(0,0,0,0.45),
+          0 0 0 1px rgba(255,255,255,0.14) inset;
+      }
+      .cta-gradient:hover {
+        filter: brightness(1.06);
+      }
+
+      /* Barra de Scroll Estilizada */
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(255,255,255,0.22);
+      }
+      
+      /* Partículas Flutuantes Sutis */
+      .particle-bg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 0;
+        overflow: hidden;
+      }
+      .particle {
+        position: absolute;
+        background: var(--primary);
+        border-radius: 50%;
+        opacity: 0.1;
+        animation: float 20s infinite linear;
+      }
+      @keyframes float {
+        0% { transform: translateY(110vh) translateX(0) scale(1); }
+        50% { transform: translateY(50vh) translateX(20px) scale(1.2); }
+        100% { transform: translateY(-10vh) translateX(-10px) scale(1); }
+      }
+
+
+      /* UI Transitions (cinematic) */
+      @keyframes uiPopIn {
+        from { opacity: 0; transform: translate3d(0, 18px, 0) scale(0.98); }
+        to   { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+      }
+      @keyframes uiFadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      .ui-pop-in {
+        will-change: transform, opacity;
+        transform: translateZ(0);
+        animation: uiPopIn 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+      }
+      .ui-fade-in {
+        animation: uiFadeIn 260ms ease-out both;
+      }
+
+      /* Upgrade Screen Glassmorphism */
+      .upgrade-glass{
+        background: rgba(255,255,255,0.06);
+        border: 1px solid rgba(255,255,255,0.18);
+        box-shadow: 0 18px 60px rgba(0,0,0,0.55);
+        border-radius: 28px;
+      }
+
+      .ui-panel {
+        background:
+          linear-gradient(145deg, rgba(40, 34, 92, 0.58), rgba(12, 10, 26, 0.36));
+        border: 1px solid rgba(255, 255, 255, 0.18);
+      }
+
+      /* =========================================================
+         UI ANIMATIONS PACK (menu/title/level-up/buttons/hud)
+         Only visual changes (no gameplay changes)
+      ========================================================= */
+
+      /* Title: float + pulse glow */
+      @keyframes floatTitle {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+      }
+      @keyframes pulseGlow {
+        0%, 100% { filter: brightness(1); }
+        50% { filter: brightness(1.08); }
+      }
+      .animate-float-title {
+        will-change: transform, filter;
+        transform: translateZ(0);
+        animation:
+          floatTitle 3.2s ease-in-out infinite,
+          pulseGlow 2.25s ease-in-out infinite;
+      }
+
+      /* Staggered entries */
+      @keyframes staggerIn {
+        from { opacity: 0; transform: translate3d(0, 14px, 0) scale(0.985); }
+        to   { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+      }
+      .stagger-in {
+        will-change: transform, opacity;
+        transform: translateZ(0);
+        animation: staggerIn 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+      }
+
+      /* Level Up "deck" distribution */
+      @keyframes deckIn {
+        from { opacity: 0; transform: translate3d(0, 26px, 0) rotateX(10deg) scale(0.975); }
+        to   { opacity: 1; transform: translate3d(0, 0, 0) rotateX(0deg) scale(1); }
+      }
+      .deck-in {
+        transform-origin: 50% 120%;
+        backface-visibility: hidden;
+        transform-style: preserve-3d;
+        will-change: transform, opacity;
+        animation: deckIn 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
+      }
+
+      /* Micro-interactions: glass hover (expand + inner glow) */
+      .glass-button {
+        position: relative;
+        overflow: hidden;
+        will-change: transform, box-shadow;
+      }
+      .glass-button::before {
+        content: '';
+        position: absolute;
+        inset: -1px;
+        background: radial-gradient(circle at 20% 15%, rgba(255,255,255,0.18), transparent 55%);
+        opacity: 0;
+        transition: opacity 320ms cubic-bezier(0.22, 1, 0.36, 1);
+        pointer-events: none;
+      }
+      .glass-button:hover::before { opacity: 1; }
+      .glass-button:hover {
+        transform: translateY(-2px) scale(1.02);
+        box-shadow:
+          0 12px 22px -8px rgba(255,255,255,0.16),
+          inset 0 0 0 1px rgba(255,255,255,0.10),
+          inset 0 0 18px rgba(255,255,255,0.08);
+      }
+
+      /* Upgrade cards: subtle tilt + luminous border */
+      .upgrade-card {
+        will-change: transform, box-shadow, border-color;
+        transform: perspective(900px) translateZ(0);
+      }
+      @media (hover: hover) {
+        .upgrade-card:hover {
+          transform: perspective(900px) rotateX(3deg) rotateY(-5deg) translateY(-2px);
+          border-color: rgba(255,255,255,0.28);
+          box-shadow:
+            0 18px 40px rgba(0,0,0,0.55),
+            0 0 0 1px rgba(255,255,255,0.12) inset,
+            0 0 26px rgba(255,255,255,0.10);
+        }
+        .upgrade-card.rare:hover {
+          border-color: rgba(234,179,8,0.55);
+          box-shadow:
+            0 18px 42px rgba(0,0,0,0.58),
+            0 0 0 1px rgba(234,179,8,0.22) inset,
+            0 0 30px rgba(234,179,8,0.18);
+        }
+      }
+
+      /* Shimmer sweep (buttons + rare upgrades) */
+      @keyframes shimmerSweep {
+        0% { transform: translateX(-120%) skewX(-18deg); opacity: 0; }
+        10% { opacity: 1; }
+        55% { opacity: 1; }
+        100% { transform: translateX(220%) skewX(-18deg); opacity: 0; }
+      }
+      .shimmer { position: relative; overflow: hidden; }
+      .shimmer::after {
+        content: '';
+        position: absolute;
+        top: -40%;
+        left: -60%;
+        width: 55%;
+        height: 180%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent);
+        transform: translateX(-120%) skewX(-18deg);
+        animation: shimmerSweep 2.8s ease-in-out infinite;
+        pointer-events: none;
+        mix-blend-mode: screen;
+      }
+      .shimmer-strong::after { background: linear-gradient(90deg, transparent, rgba(255,255,255,0.34), transparent); }
+      .shimmer-rare::after { background: linear-gradient(90deg, transparent, rgba(234,179,8,0.32), transparent); }
+
+      /* HUD fluid transitions (elastic cubic-bezier) */
+      .hud-bar-inner {
+        transition: width 520ms cubic-bezier(0.20, 1.25, 0.35, 1);
+      }
+/* =========================================================
+         SETTINGS DRAWER (top-left icon -> slide-in panel)
+         Visual-only UI panel; does not affect layout/gameplay.
+      ========================================================= */
+      .settings-backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(0,0,0,0.55);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 260ms ease;
+        z-index: 45;
+      }
+      .settings-backdrop.open {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      .settings-drawer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: min(380px, 86vw);
+        padding: calc(env(safe-area-inset-top, 0px) + 16px) 14px 14px 14px;
+        transform: translateX(-112%);
+        transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+        z-index: 46;
+        will-change: transform;
+      }
+      .settings-drawer.open {
+        transform: translateX(0);
+      }
+
+
+      /* =========================================================
+         WEBGL CRT POST-PROCESS (BETA)
+         - When enabled, the 2D canvas is used as the source (hidden visually),
+           and a WebGL canvas draws the processed result above it.
+         - Input still goes to the 2D canvas (gl canvas has pointer-events: none).
+      ========================================================= */
+      /* IMPORTANT:
+         - Game-only shader: keep WebGL output BELOW the React UI layer.
+         - Heavy (UI) shader: WebGL output must sit ON TOP to show the processed UI.
+         In both cases, pointer-events stay NONE so UI remains clickable.
+      */
+      .crt-source-canvas { z-index: 0; }
+      .crt-gl-canvas { z-index: 0; display: none; }
+      .crt-gl-enabled .crt-gl-canvas { display: block; }
+
+      /* Game-only shader (GL between game canvas and UI) */
+      .crt-gl-game .crt-source-canvas { opacity: 0; }
+
+      /* Heavy UI shader (GL on top, don't hide the source or capture will miss it) */
+      .crt-full-on .crt-gl-canvas { z-index: 60; }
+      .crt-full-on:not(.crt-full-has-frame) .crt-gl-canvas { opacity: 0; }
+      .crt-full-on .crt-source-canvas { opacity: 1; }
+
+      /* =========================================================
+         BULLET SHADER LAYER (WebGL)
+         - Transparent WebGL canvas that renders ONLY player bullets using GLSL.
+         - When the REAL CRT shader is enabled, bullets are composited into the CRT input,
+           so we hide this canvas to avoid double-rendering.
+      ========================================================= */
+      .bullet-gl-canvas { z-index: 1; display: none; }
+      .bullet-shader-on .bullet-gl-canvas { display: block; }
+      .crt-gl-enabled.bullet-shader-on .bullet-gl-canvas { display: none; }
+
+      /* Avoid capturing the DOM-side CRT tweaks when full shader is ON */
+      .crt-full-on.crt-root { filter: none !important; }
+      .crt-full-on .crt-ui-layer { filter: none !important; }
+      .crt-full-on .crt-ui-layer * { text-shadow: none !important; }
+      .crt-full-on .crt-overlay { display: none !important; }
+
+      /* When shader is ON, keep the CSS overlay lighter (to avoid double scanlines) */
+      .crt-shader-on .crt-overlay {
+        --crt-scan: calc(var(--crt-scan) * 0.35);
+        --crt-mask: calc(var(--crt-mask) * 0.25);
+        --crt-bloom: calc(var(--crt-bloom) * 0.60);
+        --crt-noise: calc(var(--crt-noise) * 0.80);
+      }
+
+      /* =========================================================
+         UI CRT (DOM) — makes the UI feel more "CRT" too.
+         NOTE: A real GLSL shader can't directly process DOM.
+         This is a lightweight, safe approach that affects only the UI layer.
+      ========================================================= */
+      .crt-enabled .crt-ui-layer {
+        filter: contrast(1.03) saturate(1.06);
+        transform: translateZ(0);
+      }
+      .crt-enabled .crt-ui-layer * {
+        text-shadow:
+          0.70px 0 rgba(255, 80, 80, 0.16),
+          -0.70px 0 rgba(90, 150, 255, 0.14),
+          0 0 14px rgba(255,255,255,0.06);
+      }
+      .crt-shader-on.crt-enabled .crt-ui-layer {
+        filter: contrast(1.035) saturate(1.065) brightness(0.995);
+      }
+
+      /* =========================================================
+         CRT FILTERS (multiple presets) - visual-only
+         Applied via:
+           - root: .crt-root.crt-mode-*
+           - overlay: .crt-overlay.crt-*
+      ========================================================= */
+
+      /* Root tone adjustments per preset */
+      .crt-root.crt-mode-lite { filter: saturate(1.05) contrast(1.06) brightness(1.02); }
+      .crt-root.crt-mode-classic { filter: saturate(1.12) contrast(1.12) brightness(1.03); }
+      .crt-root.crt-mode-vhs { filter: saturate(1.18) contrast(1.14) brightness(1.05) hue-rotate(-1deg); }
+      .crt-root.crt-mode-ultra { filter: saturate(1.25) contrast(1.20) brightness(1.07) hue-rotate(-2deg); }
+      
+      /* New presets (shader-inspired names) */
+      .crt-root.crt-mode-royale { filter: saturate(1.22) contrast(1.18) brightness(1.06) hue-rotate(-1deg); }
+      .crt-root.crt-mode-guest-advanced { filter: saturate(1.18) contrast(1.16) brightness(1.06); }
+      .crt-root.crt-mode-geom-deluxe { filter: saturate(1.15) contrast(1.18) brightness(1.05); }
+      .crt-root.crt-mode-lottes { filter: saturate(1.10) contrast(1.20) brightness(1.04); }
+      .crt-root.crt-mode-vector-glow { filter: saturate(1.06) contrast(1.16) brightness(1.08) drop-shadow(0 0 6px rgba(0,255,255,0.10)) drop-shadow(0 0 18px rgba(255,0,255,0.08)); }
+      .crt-root.crt-mode-hsm-mega-bezel-reflection { filter: saturate(1.10) contrast(1.16) brightness(1.05); }
+
+      @keyframes crtFlicker {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.92; }
+        60% { opacity: 0.97; }
+        80% { opacity: 0.90; }
+      }
+      @keyframes crtJitter {
+        0%, 100% { transform: translate3d(0,0,0); }
+        20% { transform: translate3d(0.6px,0,0); }
+        40% { transform: translate3d(-0.4px,0,0); }
+        60% { transform: translate3d(0.5px,0,0); }
+        80% { transform: translate3d(-0.3px,0,0); }
+      }
+      .crt-overlay {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 9999;
+
+        /* Defaults */
+        --crt-opacity: 0;
+        --crt-scan: 0.14;
+        --crt-mask: 0.10;
+        --crt-vignette: 0.55;
+        --crt-bloom: 0.10;
+        --crt-noise: 0.035;
+        --crt-reflect: 0;
+        --crt-radius: 0px;
+
+        /* Backdrop filter values (helps the CRT feel apply to DOM UI too) */
+        --crt-bf-contrast: 1;
+        --crt-bf-sat: 1;
+        --crt-bf-bright: 1;
+        --crt-bf-blur: 0px;
+
+        border-radius: var(--crt-radius);
+        overflow: hidden;
+        transform: translateZ(0);
+
+        /* Bezel / reflection layer (usually OFF via --crt-reflect=0) */
+        background:
+          radial-gradient(circle at 14% 10%, rgba(255,255,255, calc(var(--crt-reflect) * 0.85)), rgba(255,255,255,0) 42%),
+          radial-gradient(circle at 86% 92%, rgba(255,255,255, calc(var(--crt-reflect) * 0.40)), rgba(255,255,255,0) 55%);
+
+        /* This affects everything behind the overlay (including React UI) */
+      }
+
+      /* Presets */
+      .crt-off { --crt-opacity: 0; }
+      .crt-lite { --crt-opacity: 0.42; --crt-scan: 0.10; --crt-mask: 0.06; --crt-vignette: 0.40; --crt-bloom: 0.06; }
+      .crt-classic { --crt-opacity: 0.62; --crt-scan: 0.14; --crt-mask: 0.10; --crt-vignette: 0.55; --crt-bloom: 0.10; }
+      .crt-vhs { --crt-opacity: 0.72; --crt-scan: 0.16; --crt-mask: 0.14; --crt-vignette: 0.62; --crt-bloom: 0.12; }
+      .crt-ultra { --crt-opacity: 0.82; --crt-scan: 0.18; --crt-mask: 0.18; --crt-vignette: 0.68; --crt-bloom: 0.16; }
+
+      /* New presets */
+      .crt-royale { --crt-opacity: 0.80; --crt-scan: 0.18; --crt-mask: 0.18; --crt-vignette: 0.70; --crt-bloom: 0.16; --crt-noise: 0.040; }
+      .crt-guest-advanced { --crt-opacity: 0.78; --crt-scan: 0.20; --crt-mask: 0.14; --crt-vignette: 0.66; --crt-bloom: 0.10; --crt-noise: 0.055; }
+      .crt-geom-deluxe { --crt-opacity: 0.76; --crt-scan: 0.12; --crt-mask: 0.22; --crt-vignette: 0.64; --crt-bloom: 0.12; --crt-noise: 0.035; }
+      .crt-lottes { --crt-opacity: 0.82; --crt-scan: 0.22; --crt-mask: 0.20; --crt-vignette: 0.72; --crt-bloom: 0.14; --crt-noise: 0.045; }
+      .crt-vector-glow { --crt-opacity: 0.55; --crt-scan: 0.06; --crt-mask: 0.04; --crt-vignette: 0.46; --crt-bloom: 0.26; --crt-noise: 0.020; }
+      .crt-hsm-mega-bezel-reflection { --crt-opacity: 0.84; --crt-scan: 0.18; --crt-mask: 0.16; --crt-vignette: 0.74; --crt-bloom: 0.16; --crt-noise: 0.040; --crt-reflect: 0.28; --crt-radius: 26px; }
+
+      /* Backdrop filter tuning per preset (subtle on mobile) */
+      .crt-lite { --crt-bf-contrast: 1.02; --crt-bf-sat: 1.03; --crt-bf-bright: 1.00; --crt-bf-blur: 0.20px; }
+      .crt-classic { --crt-bf-contrast: 1.04; --crt-bf-sat: 1.05; --crt-bf-bright: 1.00; --crt-bf-blur: 0.35px; }
+      .crt-vhs { --crt-bf-contrast: 1.05; --crt-bf-sat: 1.07; --crt-bf-bright: 1.01; --crt-bf-blur: 0.45px; }
+      .crt-ultra { --crt-bf-contrast: 1.06; --crt-bf-sat: 1.08; --crt-bf-bright: 1.02; --crt-bf-blur: 0.55px; }
+      .crt-royale { --crt-bf-contrast: 1.06; --crt-bf-sat: 1.08; --crt-bf-bright: 1.01; --crt-bf-blur: 0.50px; }
+      .crt-guest-advanced { --crt-bf-contrast: 1.05; --crt-bf-sat: 1.07; --crt-bf-bright: 1.01; --crt-bf-blur: 0.42px; }
+      .crt-geom-deluxe { --crt-bf-contrast: 1.06; --crt-bf-sat: 1.06; --crt-bf-bright: 1.01; --crt-bf-blur: 0.38px; }
+      .crt-lottes { --crt-bf-contrast: 1.07; --crt-bf-sat: 1.06; --crt-bf-bright: 1.01; --crt-bf-blur: 0.45px; }
+      .crt-vector-glow { --crt-bf-contrast: 1.04; --crt-bf-sat: 1.04; --crt-bf-bright: 1.03; --crt-bf-blur: 0.30px; }
+      .crt-hsm-mega-bezel-reflection { --crt-bf-contrast: 1.06; --crt-bf-sat: 1.07; --crt-bf-bright: 1.01; --crt-bf-blur: 0.60px; }
+
+      /* Make sure OFF is REALLY OFF */
+      .crt-overlay.crt-off { display: none; }
+
+      .crt-overlay::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        opacity: var(--crt-opacity);
+        background:
+          /* subtle bloom / glow */
+          radial-gradient(circle at 50% 40%, rgba(255,255,255,var(--crt-bloom)), transparent 55%),
+          /* scanlines */
+          repeating-linear-gradient(
+            to bottom,
+            rgba(0,0,0,var(--crt-scan)) 0px,
+            rgba(0,0,0,0) 2px,
+            rgba(0,0,0,0) 4px
+          ),
+          /* RGB mask */
+          repeating-linear-gradient(
+            to right,
+            rgba(255,0,0,var(--crt-mask)) 0px,
+            rgba(255,0,0,0) 1px,
+            rgba(0,255,0,var(--crt-mask)) 2px,
+            rgba(0,255,0,0) 3px,
+            rgba(0,0,255,var(--crt-mask)) 4px,
+            rgba(0,0,255,0) 5px
+          );
+        mix-blend-mode: overlay;
+        animation: crtJitter 2.6s infinite;
+      }
+
+      .crt-overlay::after {
+        content: '';
+        position: absolute;
+        inset: -10%;
+        opacity: var(--crt-opacity);
+        background:
+          /* vignette */
+          radial-gradient(circle at 50% 50%, rgba(0,0,0,0) 35%, rgba(0,0,0,var(--crt-vignette)) 100%),
+          /* faint vertical noise bands */
+          repeating-linear-gradient(
+            to right,
+            rgba(255,255,255,var(--crt-noise)) 0px,
+            rgba(255,255,255,0) 12px,
+            rgba(255,255,255,calc(var(--crt-noise) * 0.7)) 18px
+          );
+        mix-blend-mode: multiply;
+        animation: crtFlicker 3.8s infinite;
+      }
+
+      /* Extra bezel styling for HSM preset */
+      .crt-overlay.crt-hsm-mega-bezel-reflection {
+        box-shadow:
+          inset 0 0 0 2px rgba(0,0,0,0.60),
+          inset 0 0 70px rgba(0,0,0,0.72),
+          inset 0 0 180px rgba(0,0,0,0.45);
+      }
+
+      /* Respect reduced motion */
+      @media (prefers-reduced-motion: reduce) {
+        .animate-float-title,
+        .stagger-in,
+        .deck-in,
+        .shimmer::after {
+          animation: none !important;
+        }
+
+        .crt-overlay::before,
+        .crt-overlay::after {
+          animation: none !important;
+        }
+
+        .settings-drawer {
+          transition: none !important;
+        }
+        .glass-button,
+        .upgrade-card,
+        .hud-bar-inner {
+          transition: none !important;
+        }
+      }
+
+
+      /* Menu background: static image (replaces demo canvas in menu) */
+      .menu-scroll-bg{
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        z-index: 0;
+        pointer-events: none;
+      }
+      .menu-scroll-bg__img{
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url('/menu-bg.png');
+        background-size: 100% 100%;
+        background-position: center;
+        background-repeat: no-repeat;
+filter: saturate(1.05) contrast(1.05);
+        opacity: 0.9;
+      }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "react": "https://esm.sh/react@^19.2.4",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.4"
+  }
+}
+</script>
+</head>
+  <body>
+    <div class="particle-bg">
+    </div>
+    <div id="root"></div>
+    <script type="module" src="/src/app/main.tsx"></script>
+  </body>
+</html>
